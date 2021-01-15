@@ -6,7 +6,7 @@ Download videos and subtitles from *.yuja.com with this script.
 Useful if your web-browser doesn't support streaming, or your PC is too weak
 to run one in the first place. Also useful for archival.
 
-I have a blog post on this over at https://xwx.moe/lib/ripping_hls_from_yuja.md
+I have a blog post on this over at https://xwx.moe/lib/ripping_hls_from_yuja.html
 
 ----------------------------------------
 PRE-REQUISITES
