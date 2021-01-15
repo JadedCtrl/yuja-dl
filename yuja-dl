@@ -1,0 +1,76 @@
+#!/bin/sh
+# --------------------------------------
+# name: yuja-dl
+# main: Jaidyn Ann <jadedctrl@teknik.io>
+# lisc: CC0
+# date: 2021
+# --------------------------------------
+
+function download_url {
+	local url="$1"; local output="$2"
+	local id="$(echo "$url" | video_id)"
+	local sub="$(echo "$url" | subdomain)"
+	local hls_key="$(get_metadata "$sub" "$id" | hls_file_key)"
+	local captions_key="$(get_metadata "$sub" "$id" | caption_file_key)"
+
+	ffmpeg -i "$(m3u8_url "$hls_key")" "${output}.mp4"
+	curl -o "${output}.srt" "$(caption_url "$sub" "$captions_key")"
+}
+
+function m3u8_url {
+	local hls_key="$1"
+	local fragment="${hls_key}/720p/${hls_key}.m3u8"
+	echo \
+	"https://my.yuja.com/P/Data/VideoUrl/level${fragment}.m3u8?dist=yuja-edits&key=${fragment}"
+}
+
+function caption_url {
+	local subdomain="$1"
+	local caption_key="$2"
+	echo \
+	"https://${subdomain}.yuja.com/P/DataPage/CaptionFile/${caption_key}"
+}
+
+function get_metadata {
+	local sub="$1"; local id="$2"
+	curl -s \
+	"https://${sub}.yuja.com/P/Data/GetVideoListNodeInfo?videoPID=${id}"
+}
+
+function hls_file_key {
+	jq -r .video \
+	| jq -r .videoHLSFileKey.value
+}
+
+function caption_file_key {
+	jq -r .video \
+	| jq -r .captionFileKey.value
+}
+
+function video_id {
+	sed 's%.*v=%%' \
+	| sed 's%&.*%%'
+}
+
+function subdomain {
+	awk -F '.' '{print $1}' \
+	| sed 's%.*//%%'
+}
+
+
+# INVOCATION
+# --------------------------------------
+function usage {
+	echo "usage: yuja-dl URL OUTPUT"
+	echo
+	echo "  URL is a *.yuja.com URL with a video ID argument"
+	echo "  OUTPUT is the basename for the mp4 and srt files"
+	exit 2
+}
+
+URL="$1"
+OUTPUT="$2"
+
+if test -z "$URL" -o -z "$OUTPUT"; then usage; fi
+
+download_url "$URL" "$OUTPUT"
