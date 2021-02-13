@@ -13,8 +13,8 @@ function download_url {
 
 	local captions_key="$(get_metadata "$sub" "$id" | caption_file_key)"
 	local node_pid="$(get_metadata "$sub" "$id" | video_node_pid)"
-	local flink="$(get_node_metadata "$id" "$node_pid" | video_filelink)"
-	local m3u8="$(get_video_source "$id" "$flink" | video_source_m3u8_link)"
+	local flink="$(get_node_metadata "$sub" "$id" "$node_pid" | video_filelink)"
+	local m3u8="$(get_video_source "$sub" "$id" "$flink" | video_source_m3u8_link)"
 
 	curl -o "${output}.srt" "$(caption_url "$sub" "$captions_key")"
 	ffmpeg -i "$m3u8" "${output}.mp4"
@@ -42,10 +42,11 @@ function video_node_pid {
 #---------------------------------------
 
 function get_node_metadata {
-	local video_id="$1"
-	local video_node_pid="$2"
+	local sub="$1"
+	local video_id="$2"
+	local video_node_pid="$3"
 	 curl -s \
-		"https://dcccd.yuja.com/P/Data/VideoJSON" \
+		"https://${sub}.yuja.com/P/Data/VideoJSON" \
 		--data-raw "video=${video_id}&node=${video_node_pid}"
 }
 
@@ -56,10 +57,11 @@ function video_filelink {
 #---------------------------------------
 
 function get_video_source {
-	local video_id="$1"
-	local video_filelink="$2"
+	local sub="$1"
+	local video_id="$2"
+	local video_filelink="$3"
 	curl -s \
-	"https://dcccd.yuja.com/P/Data/VideoSource?video=${video_filelink}&videoPID=${video_id}"
+	"https://${sub}.yuja.com/P/Data/VideoSource?video=${video_filelink}&videoPID=${video_id}"
 }
 
 function video_source_m3u8_link {
