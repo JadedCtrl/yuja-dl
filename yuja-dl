@@ -8,8 +8,8 @@
 
 function download_url {
 	local url="$1"; local output="$2"
-	local id="$(echo "$url" | video_id)"
 	local sub="$(echo "$url" | subdomain)"
+    local id="$(video_metadata "$url" "$sub" | video_pid)"
 
 	local captions_key="$(get_metadata "$sub" "$id" | caption_file_key)"
 	local node_pid="$(get_metadata "$sub" "$id" | video_node_pid)"
@@ -37,6 +37,10 @@ function caption_file_key {
 function video_node_pid {
 	jq -r .node \
 	| jq -r .videoListNodePID
+}
+
+function video_pid {
+    jq -r .videoPID
 }
 
 #---------------------------------------
@@ -79,14 +83,21 @@ function caption_url {
 
 #---------------------------------------
 
-function video_id {
-	sed 's%.*v=%%' \
-	| sed 's%&.*%%'
-}
-
 function subdomain {
 	awk -F '.' '{print $1}' \
 	| sed 's%.*//%%'
+}
+
+function video_uid {
+    sed 's%.*u=%%' \
+    | sed 's%&.*%%'
+}
+
+function video_metadata {
+    local url="$1"; local sub="$2"
+    local uid="$(echo "$url" | video_uid)"
+    curl -b "$COOKIES" -s \
+    "https://${sub}.yuja.com/V/VideoDecryptLogicServlet?u=${uid}"
 }
 
 # INVOCATION
