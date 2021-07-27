@@ -16,7 +16,7 @@ function download_url {
 	local flink="$(get_node_metadata "$sub" "$id" "$node_pid" | video_filelink)"
 	local m3u8="$(get_video_source "$sub" "$id" "$flink" | video_source_m3u8_link)"
 
-	curl -o "${output}.srt" "$(caption_url "$sub" "$captions_key")"
+	curl -b "$COOKIES" -o "${output}.srt" "$(caption_url "$sub" "$captions_key")"
 	ffmpeg -i "$m3u8" "${output}.mp4"
 }
 
@@ -25,7 +25,7 @@ function download_url {
 
 function get_metadata {
 	local sub="$1"; local id="$2"
-	curl -s \
+	curl -b "$COOKIES" -s \
 	"https://${sub}.yuja.com/P/Data/GetVideoListNodeInfo?videoPID=${id}"
 }
 
@@ -45,7 +45,7 @@ function get_node_metadata {
 	local sub="$1"
 	local video_id="$2"
 	local video_node_pid="$3"
-	 curl -s \
+	 curl -b "$COOKIES" -s \
 		"https://${sub}.yuja.com/P/Data/VideoJSON" \
 		--data-raw "video=${video_id}&node=${video_node_pid}"
 }
@@ -60,7 +60,7 @@ function get_video_source {
 	local sub="$1"
 	local video_id="$2"
 	local video_filelink="$3"
-	curl -s \
+	curl -b "$COOKIES" -s \
 	"https://${sub}.yuja.com/P/Data/VideoSource?video=${video_filelink}&videoPID=${video_id}"
 }
 
@@ -92,15 +92,18 @@ function subdomain {
 # INVOCATION
 # --------------------------------------
 function usage {
-	echo "usage: yuja-dl URL OUTPUT"
+	echo "usage: yuja-dl URL OUTPUT [cookies.txt]"
 	echo
 	echo "  URL is a *.yuja.com URL with a video ID argument"
 	echo "  OUTPUT is the basename for the mp4 and srt files"
+	echo "	cookies.txt is an optional cookie-jar, used for authentication"
+	echo "	with private videos. Should be exported from your web-browser."
 	exit 2
 }
 
 URL="$1"
 OUTPUT="$2"
+COOKIES="$3"
 
 if test -z "$URL" -o -z "$OUTPUT"; then usage; fi
 
