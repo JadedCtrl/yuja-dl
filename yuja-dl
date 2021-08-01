@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # --------------------------------------
 # name: yuja-dl
 # main: Jaidyn Ann <jadedctrl@teknik.io>
@@ -7,9 +7,10 @@
 # --------------------------------------
 
 function download_url {
-	local url="$1"; local output="$2"
+	local url="$1"
 	local sub="$(echo "$url" | subdomain)"
-    local id="$(video_metadata "$url" "$sub" | video_pid)"
+	local id="$(video_metadata "$url" "$sub" | video_pid)"
+	local output="${OUTPUT:-$(get_metadata "$sub" "$id" | default_video_title)}"
 
 	local captions_key="$(get_metadata "$sub" "$id" | caption_file_key)"
 	local node_pid="$(get_metadata "$sub" "$id" | video_node_pid)"
@@ -41,6 +42,11 @@ function video_node_pid {
 
 function video_pid {
     jq -r .videoPID
+}
+
+function default_video_title {
+    jq -r .video \
+    | jq -r .title
 }
 
 #---------------------------------------
@@ -103,7 +109,7 @@ function video_metadata {
 # INVOCATION
 # --------------------------------------
 function usage {
-	echo "usage: yuja-dl URL OUTPUT [cookies.txt]"
+	echo "usage: yuja-dl URL [-o OUTPUT] [-c cookies.txt]"
 	echo
 	echo "  URL is a *.yuja.com URL with a video ID argument"
 	echo "  OUTPUT is the basename for the mp4 and srt files"
@@ -112,10 +118,31 @@ function usage {
 	exit 2
 }
 
-URL="$1"
-OUTPUT="$2"
-COOKIES="$3"
+if [ "$#" -eq 0 ]; then
+   usage
+fi
 
-if test -z "$URL" -o -z "$OUTPUT"; then usage; fi
+OPTIND=2
+while getopts ":hc:o:" arg; do
+    case "$arg" in
+        h)
+            usage
+            ;;
+        c)
+            COOKIES="$OPTARG"
+            ;;
+        o)
+            OUTPUT="$OPTARG"
+            ;;
+        :)
+            echo "$0: Must supply an argument to -$OPTARG."
+            exit 1
+            ;;
+        ?)
+            echo "Invalid option: -${OPTARG}"
+            usage
+            ;;
+    esac
+done
 
-download_url "$URL" "$OUTPUT"
+download_url "$1"
