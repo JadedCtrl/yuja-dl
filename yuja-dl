@@ -9,7 +9,7 @@
 download_url() {
 	local url="$1"
 	local sub="$(echo "$url" | subdomain)"
-	local id="$(video_metadata "$url" "$sub" | video_pid)"
+	local id="$(get_url_id "$url" "$sub")"
 
 	local captions_key="$(get_metadata "$sub" "$id" | caption_file_key)"
 	local node_pid="$(get_metadata "$sub" "$id" | video_node_pid)"
@@ -27,8 +27,26 @@ download_url() {
 
 #---------------------------------------
 
+get_url_id() {
+	local url="$1"
+	local sub="$2"
+	if echo "$url" | grep "v=" > /dev/null; then
+		echo "$url" \
+		| video_vid
+	elif echo "$url" | grep "u=" > /dev/null; then
+		video_metadata "$url" "$sub" \
+		| video_pid
+	else
+		>&2 echo "The URL provided is invalid― try pasting it again."
+		>&2 echo "If you're sure you got it right, please report the URL"
+		>&2 echo "as a bug (https://github.com/JadedCtrl/yuja-dl/)."
+		exit 3
+	fi
+}
+
 get_metadata() {
-	local sub="$1"; local id="$2"
+	local sub="$1"
+	local id="$2"
 	curl -b "$COOKIES" -s \
 	"https://${sub}.yuja.com/P/Data/GetVideoListNodeInfo?videoPID=${id}"
 }
@@ -97,13 +115,19 @@ subdomain() {
 	| sed 's%.*//%%'
 }
 
+video_vid() {
+	sed 's%.*v=%%' \
+	| sed 's%&.*%%'
+}
+
 video_uid() {
     sed 's%.*u=%%' \
     | sed 's%&.*%%'
 }
 
 video_metadata() {
-    local url="$1"; local sub="$2"
+    local url="$1"
+    local sub="$2"
     local uid="$(echo "$url" | video_uid)"
     curl -b "$COOKIES" -s \
     "https://${sub}.yuja.com/V/VideoDecryptLogicServlet?u=${uid}"
@@ -112,12 +136,12 @@ video_metadata() {
 # INVOCATION
 # --------------------------------------
 usage() {
-	echo "usage: yuja-dl URL [-o OUTPUT] [-c cookies.txt]"
-	echo
-	echo "  URL is a *.yuja.com URL with a video ID argument"
-	echo "  OUTPUT is the basename for the mp4 and srt files"
-	echo "	cookies.txt is an optional cookie-jar, used for authentication"
-	echo "	with private videos. Should be exported from your web-browser."
+	>&2 echo "usage: yuja-dl URL [-o OUTPUT] [-c cookies.txt]"
+	>&2 echo
+	>&2 echo "  URL is a *.yuja.com URL with a video ID argument"
+	>&2 echo "  OUTPUT is the basename for the mp4 and srt files"
+	>&2 echo "  cookies.txt is an optional cookie-jar, used for authentication"
+	>&2 echo "  with private videos. Should be exported from your web-browser."
 	exit 2
 }
 
