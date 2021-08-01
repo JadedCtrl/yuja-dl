@@ -21,7 +21,7 @@ download_url() {
 	fi
 
 	curl -b "$COOKIES" -o "${OUTPUT}.srt" "$(caption_url "$sub" "$captions_key")"
-	ffmpeg -i "$m3u8" "${OUTPUT}.mp4"
+	ffmpeg -i "$m3u8" -c copy "${OUTPUT}.mkv"
 }
 
 
