@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # --------------------------------------
 # name: yuja-dl
 # main: Jaidyn Ann <jadedctrl@teknik.io>
@@ -6,52 +6,55 @@
 # date: 2021
 # --------------------------------------
 
-function download_url {
+download_url() {
 	local url="$1"
 	local sub="$(echo "$url" | subdomain)"
 	local id="$(video_metadata "$url" "$sub" | video_pid)"
-	local output="${OUTPUT:-$(get_metadata "$sub" "$id" | default_video_title)}"
 
 	local captions_key="$(get_metadata "$sub" "$id" | caption_file_key)"
 	local node_pid="$(get_metadata "$sub" "$id" | video_node_pid)"
 	local flink="$(get_node_metadata "$sub" "$id" "$node_pid" | video_filelink)"
 	local m3u8="$(get_video_source "$sub" "$id" "$flink" | video_source_m3u8_link)"
 
-	curl -b "$COOKIES" -o "${output}.srt" "$(caption_url "$sub" "$captions_key")"
-	ffmpeg -i "$m3u8" "${output}.mp4"
+	if test -z "$OUTPUT"; then
+		OUTPUT="$(get_metadata "$sub" "$id" | default_video_title)"
+	fi
+
+	curl -b "$COOKIES" -o "${OUTPUT}.srt" "$(caption_url "$sub" "$captions_key")"
+	ffmpeg -i "$m3u8" "${OUTPUT}.mp4"
 }
 
 
 #---------------------------------------
 
-function get_metadata {
+get_metadata() {
 	local sub="$1"; local id="$2"
 	curl -b "$COOKIES" -s \
 	"https://${sub}.yuja.com/P/Data/GetVideoListNodeInfo?videoPID=${id}"
 }
 
-function caption_file_key {
+caption_file_key() {
 	jq -r .video \
 	| jq -r .captionFileKey.value
 }
 
-function video_node_pid {
+video_node_pid() {
 	jq -r .node \
 	| jq -r .videoListNodePID
 }
 
-function video_pid {
+video_pid() {
     jq -r .videoPID
 }
 
-function default_video_title {
+default_video_title() {
     jq -r .video \
     | jq -r .title
 }
 
 #---------------------------------------
 
-function get_node_metadata {
+get_node_metadata() {
 	local sub="$1"
 	local video_id="$2"
 	local video_node_pid="$3"
@@ -60,13 +63,13 @@ function get_node_metadata {
 		--data-raw "video=${video_id}&node=${video_node_pid}"
 }
 
-function video_filelink {
+video_filelink() {
 	jq -r .video.videoLink
 }
 
 #---------------------------------------
 
-function get_video_source {
+get_video_source() {
 	local sub="$1"
 	local video_id="$2"
 	local video_filelink="$3"
@@ -74,13 +77,13 @@ function get_video_source {
 	"https://${sub}.yuja.com/P/Data/VideoSource?video=${video_filelink}&videoPID=${video_id}"
 }
 
-function video_source_m3u8_link {
+video_source_m3u8_link() {
 	jq -r .videoSources[]
 }
 
 #---------------------------------------
 
-function caption_url {
+caption_url() {
 	local subdomain="$1"
 	local caption_key="$2"
 	echo \
@@ -89,17 +92,17 @@ function caption_url {
 
 #---------------------------------------
 
-function subdomain {
+subdomain() {
 	awk -F '.' '{print $1}' \
 	| sed 's%.*//%%'
 }
 
-function video_uid {
+video_uid() {
     sed 's%.*u=%%' \
     | sed 's%&.*%%'
 }
 
-function video_metadata {
+video_metadata() {
     local url="$1"; local sub="$2"
     local uid="$(echo "$url" | video_uid)"
     curl -b "$COOKIES" -s \
@@ -108,7 +111,7 @@ function video_metadata {
 
 # INVOCATION
 # --------------------------------------
-function usage {
+usage() {
 	echo "usage: yuja-dl URL [-o OUTPUT] [-c cookies.txt]"
 	echo
 	echo "  URL is a *.yuja.com URL with a video ID argument"
@@ -118,7 +121,7 @@ function usage {
 	exit 2
 }
 
-if [ "$#" -eq 0 ]; then
+if test "$#" -eq 0; then
    usage
 fi
 
@@ -126,22 +129,17 @@ OPTIND=2
 while getopts ":hc:o:" arg; do
     case "$arg" in
         h)
-            usage
-            ;;
+            usage ;;
         c)
-            COOKIES="$OPTARG"
-            ;;
+            COOKIES="$OPTARG" ;;
         o)
-            OUTPUT="$OPTARG"
-            ;;
+            OUTPUT="$OPTARG" ;;
         :)
             echo "$0: Must supply an argument to -$OPTARG."
-            exit 1
-            ;;
+            exit 1 ;;
         ?)
             echo "Invalid option: -${OPTARG}"
-            usage
-            ;;
+            usage ;;
     esac
 done
 
