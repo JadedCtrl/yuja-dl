@@ -31,6 +31,5 @@ $OUTPUT_NAME will be the basename of the mp4 and srt files.
 BORING STUFF
 ----------------------------------------
 License is CC-0 
-Author is Jaidyn Ann <jadedctrl@teknik.io>
-https://git.feneas.org/detruota/yuja-dl.git
-https://github.com/JadedCtrl/yuja-dl.git
+Author is Jaidyn Ann <jadedctrl@posteo.at>
+https://hak.xwx.moe/jadedctrl/yuja-dl
